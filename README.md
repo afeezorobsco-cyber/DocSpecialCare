@@ -5,6 +5,7 @@ Every hand-off and every payment is enforced by a NEAR smart contract, and all m
 
 Built for the **NEAR Hackathon 2026** (tracks: *Real-World Money*, *Privacy & Private AI*, *Open Innovation*).
 
+- **Live demo: https://docspecialcare.vercel.app** (open `/app`, pick a demo persona)
 - Live contract (testnet): [`care.docspecialcare-33f312.testnet`](https://testnet.nearblocks.io/address/care.docspecialcare-33f312.testnet)
 - Stack: Rust smart contract (near-sdk 5) · Next.js 14 web app · NEAR Wallet Selector · TweetNaCl (x25519 / XSalsa20-Poly1305)
 
@@ -64,6 +65,8 @@ npm run journey      # needs web/.demo-keys.json, see "Deploy your own" below
 It books → completes → refers → books specialist → orders test → pays lab → submits result → prescribes → assigns pharmacy → quotes → pays → dispenses, then shows a **second dispense is rejected**, printing a NearBlocks link for each transaction.
 
 ### Option B: the web app
+
+Hosted: **https://docspecialcare.vercel.app/app**. Or run it locally:
 
 ```bash
 cd web

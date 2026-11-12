@@ -1,7 +1,7 @@
 # DocSpecialCare demo video script (≈ 2 minutes)
 
 **Setup before recording**
-- Use the hosted site (faster than local dev). Browser at ~110% zoom, close other tabs.
+- Use the hosted site https://docspecialcare.vercel.app/app. Browser at ~110% zoom, close other tabs.
 - Screen recorder: macOS `Cmd + Shift + 5` → "Record Entire Screen" (or a window). Record the voice-over live or add it after.
 - Open a second tab with the contract on NearBlocks: https://testnet.nearblocks.io/address/care.docspecialcare-33f312.testnet
 - Have a small image or PDF on your desktop to use as the "lab report" (e.g. a photo of any printed lab result, under 3 MB).
@@ -39,7 +39,7 @@
 > • On-chain referrals & prescriptions that can't be forged or filled twice
 > • Lab results end-to-end encrypted, patient controls access
 >
-> Try it: <HOSTED_URL>
+> Try it: https://docspecialcare.vercel.app
 > Code: https://github.com/afeezorobsco-cyber/DocSpecialCare
 >
 > Doctors & pharmacists: what would stop your clinic using this tomorrow?

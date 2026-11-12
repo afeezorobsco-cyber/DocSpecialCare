@@ -1,0 +1,6 @@
+.demo-keys.json
+.env*
+data
+node_modules
+.next
+scripts/.keys
