@@ -17,10 +17,12 @@ export async function createRecord(prefix: string, body: RecordBody, readers: st
   for (const r of uniq) pubs[r] = await pubKeyOf(r);
   const { sealed, hash } = await seal(body, pubs);
   const id = newRecordId(prefix);
+  const payload = JSON.stringify({ id, ...sealed });
+  if (payload.length > 4_400_000) throw new Error("File too large: please attach a file under 3 MB.");
   const res = await fetch("/api/records", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ id, ...sealed }),
+    body: payload,
   });
   if (!res.ok) throw new Error((await res.json()).error || "Upload failed");
   return { id, hash };

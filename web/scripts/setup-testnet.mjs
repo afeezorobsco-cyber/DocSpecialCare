@@ -82,10 +82,18 @@ async function main() {
     save(keys);
   }
   const master = acct(keys.master.id, keys.master.secret);
+
+  // top up master from a fresh faucet account when running low (e.g. fresh contract)
+  const CONTRACT_KEY = process.env.CONTRACT_PREFIX || keys.contractKey || "contract";
+  if (!keys[CONTRACT_KEY] && (await master.getBalance()) < NEAR(5)) {
+    const donor = await faucetAccount();
+    console.log(`→ topping up master from ${donor.id}`);
+    await acct(donor.id, donor.secret).transfer({ receiverId: keys.master.id, amount: NEAR(9.8) });
+  }
   console.log(`master: ${keys.master.id}  balance ${(Number(await master.getBalance()) / 1e24).toFixed(2)} NEAR`);
 
   // contract + personas as NEAR sub-accounts of master
-  const subs = [{ key: "contract", fund: 3.5 }, ...PERSONAS];
+  const subs = [{ key: CONTRACT_KEY, fund: 3.5 }, ...PERSONAS];
   for (const s of subs) {
     if (keys[s.key] && (await exists(keys[s.key].id))) continue;
     const kp = KeyPair.fromRandom("ed25519");
@@ -96,7 +104,20 @@ async function main() {
     save(keys);
   }
 
+  // keep personas funded for demos
+  for (const p of PERSONAS) {
+    const bal = await acct(keys[p.key].id, keys[p.key].secret).getBalance();
+    if (bal < NEAR(p.fund * 0.8)) {
+      console.log(`→ topping up ${keys[p.key].id}`);
+      await master.transfer({ receiverId: keys[p.key].id, amount: NEAR(p.fund) - bal });
+    }
+  }
+
   // deploy + init
+  if (keys.contract && keys.contract.id !== keys[CONTRACT_KEY].id) keys[`old_${Date.now()}`] = keys.contract;
+  keys.contractKey = CONTRACT_KEY;
+  keys.contract = keys[CONTRACT_KEY];
+  save(keys);
   const contractId = keys.contract.id;
   const contract = acct(contractId, keys.contract.secret);
   if (!existsSync(WASM)) throw new Error(`WASM not found at ${WASM}. Run: cd contract && cargo near build non-reproducible-wasm`);

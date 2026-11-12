@@ -351,7 +351,7 @@ function UploadBtn({ onDone }: { onDone: () => void }) {
           <Field label="Notes">
             <textarea className={inputCls} rows={3} value={text} onChange={(e) => setText(e.target.value)} />
           </Field>
-          <Field label="File (optional, max 8 MB)">
+          <Field label="File (optional, max 3 MB)">
             <input type="file" className="text-sm" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           </Field>
           <Btn

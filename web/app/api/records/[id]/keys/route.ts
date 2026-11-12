@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getRecord, putRecord } from "@/lib/store";
+import { addKey, recordExists } from "@/lib/store";
 import { canAccess } from "@/lib/near";
 
 export const runtime = "nodejs";
@@ -14,10 +14,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
   const allowed = await canAccess(params.id, account).catch(() => false);
   if (!allowed) return NextResponse.json({ error: "Grant access on-chain first" }, { status: 403 });
-  const rec = await getRecord(params.id).catch(() => null);
-  if (!rec) return NextResponse.json({ error: "Record not found" }, { status: 404 });
-  if (rec.keys[account]) return NextResponse.json({ ok: true, existed: true });
-  rec.keys[account] = { box: key.box, nonce: key.nonce, eph: key.eph };
-  await putRecord(rec);
-  return NextResponse.json({ ok: true });
+  if (!(await recordExists(params.id).catch(() => false))) return NextResponse.json({ error: "Record not found" }, { status: 404 });
+  const added = await addKey(params.id, account, { box: key.box, nonce: key.nonce, eph: key.eph });
+  return NextResponse.json({ ok: true, existed: !added });
 }

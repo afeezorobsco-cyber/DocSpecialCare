@@ -1,8 +1,24 @@
 // Off-chain ciphertext store. Holds only encrypted blobs and wrapped keys.
-// File-backed for the hackathon; swap for IPFS/S3 without changing the API.
+// Two backends behind one API:
+//   - Vercel Blob (private) when BLOB_READ_WRITE_TOKEN is set (production)
+//   - local files under ./data otherwise (dev)
+// Everything is write-once (data, each wrapped key, each chat message is its own
+// object), so there are no overwrite/consistency races.
 import { promises as fs } from "fs";
 import path from "path";
+import { get, list, put } from "@vercel/blob";
 
+export type WrappedKey = { box: string; nonce: string; eph: string };
+export type StoredRecord = {
+  id: string;
+  ciphertext: string;
+  nonce: string;
+  keys: Record<string, WrappedKey>;
+  created_at: number;
+};
+export type ChatMessage = { from: string; box: string; nonce: string; at: number };
+
+const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 const ROOT = process.env.DATA_DIR || path.join(process.cwd(), "data");
 
 const safe = (s: string) => {
@@ -10,40 +26,95 @@ const safe = (s: string) => {
   return s;
 };
 
-async function readJson<T>(file: string): Promise<T | null> {
+// ---------------------------------------------------------------- primitives
+
+async function readObj<T>(p: string): Promise<T | null> {
+  if (USE_BLOB) {
+    const r = await get(p, { access: "private", useCache: false }).catch(() => null);
+    if (!r || !r.stream) return null;
+    return JSON.parse(await new Response(r.stream).text()) as T;
+  }
   try {
-    return JSON.parse(await fs.readFile(file, "utf8")) as T;
+    return JSON.parse(await fs.readFile(path.join(ROOT, p), "utf8")) as T;
   } catch {
     return null;
   }
 }
 
-async function writeJson(file: string, data: unknown) {
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, JSON.stringify(data));
+async function writeObj(p: string, data: unknown) {
+  const body = JSON.stringify(data);
+  if (USE_BLOB) {
+    await put(p, body, { access: "private", addRandomSuffix: false, contentType: "application/json" });
+    return;
+  }
+  const f = path.join(ROOT, p);
+  await fs.mkdir(path.dirname(f), { recursive: true });
+  await fs.writeFile(f, body, { flag: "wx" }); // write-once
 }
 
-export type StoredRecord = {
-  id: string;
-  ciphertext: string;
-  nonce: string;
-  keys: Record<string, { box: string; nonce: string; eph: string }>;
-  created_at: number;
-};
+async function listNames(prefix: string): Promise<string[]> {
+  if (USE_BLOB) {
+    const out: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const r = await list({ prefix, cursor, limit: 1000 });
+      out.push(...r.blobs.map((b) => b.pathname));
+      cursor = r.hasMore ? r.cursor : undefined;
+    } while (cursor);
+    return out;
+  }
+  try {
+    return (await fs.readdir(path.join(ROOT, prefix))).map((f) => prefix + f);
+  } catch {
+    return [];
+  }
+}
 
-const recFile = (id: string) => path.join(ROOT, "records", safe(id) + ".json");
+// ---------------------------------------------------------------- records
 
-export const getRecord = (id: string) => readJson<StoredRecord>(recFile(id));
-export const putRecord = (r: StoredRecord) => writeJson(recFile(r.id), r);
+const recBase = (id: string) => `records/${safe(id)}/`;
+const accFile = (a: string) => safe(a.replace(/[^A-Za-z0-9_.-]/g, "_")) + ".json";
 
-export type ChatMessage = { from: string; box: string; nonce: string; at: number };
-const chatFile = (cid: string) => path.join(ROOT, "chat", safe(cid) + ".json");
+export async function recordExists(id: string) {
+  return (await readObj(recBase(id) + "data.json")) !== null;
+}
+
+export async function putRecord(r: StoredRecord) {
+  await writeObj(recBase(r.id) + "data.json", { id: r.id, ciphertext: r.ciphertext, nonce: r.nonce, created_at: r.created_at });
+  for (const [acc, k] of Object.entries(r.keys)) await writeObj(recBase(r.id) + "keys/" + accFile(acc), { account: acc, ...k });
+}
+
+export async function getRecord(id: string): Promise<StoredRecord | null> {
+  const data = await readObj<Omit<StoredRecord, "keys">>(recBase(id) + "data.json");
+  if (!data) return null;
+  const keys: Record<string, WrappedKey> = {};
+  const names = await listNames(recBase(id) + "keys/");
+  await Promise.all(
+    names.map(async (n) => {
+      const k = await readObj<WrappedKey & { account: string }>(n);
+      if (k) keys[k.account] = { box: k.box, nonce: k.nonce, eph: k.eph };
+    })
+  );
+  return { ...data, keys };
+}
+
+/** Adds a wrapped key for a new reader. Returns false if one already exists. */
+export async function addKey(id: string, account: string, k: WrappedKey): Promise<boolean> {
+  const p = recBase(id) + "keys/" + accFile(account);
+  if (await readObj(p)) return false;
+  await writeObj(p, { account, ...k }).catch(() => {});
+  return true;
+}
+
+// ---------------------------------------------------------------- chat
 
 export async function getChat(cid: string): Promise<ChatMessage[]> {
-  return (await readJson<ChatMessage[]>(chatFile(cid))) || [];
+  const names = (await listNames(`chat/${safe(cid)}/`)).sort().slice(-300);
+  const msgs = await Promise.all(names.map((n) => readObj<ChatMessage>(n)));
+  return msgs.filter((m): m is ChatMessage => !!m).sort((a, b) => a.at - b.at);
 }
+
 export async function appendChat(cid: string, m: ChatMessage) {
-  const list = await getChat(cid);
-  list.push(m);
-  await writeJson(chatFile(cid), list.slice(-500));
+  const name = `${String(m.at).padStart(15, "0")}-${Math.random().toString(36).slice(2, 10)}.json`;
+  await writeObj(`chat/${safe(cid)}/${name}`, m);
 }

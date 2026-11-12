@@ -55,7 +55,7 @@ function UploadResult({ o, me, onClose, onDone }: { o: LabOrder; me: Provider; o
         <Field label="Summary / values">
           <textarea className={inputCls} rows={4} value={text} onChange={(e) => setText(e.target.value)} placeholder="Haemoglobin 13.2 g/dL (ref 12–16)…" />
         </Field>
-        <Field label="Report file (PDF/image, max 8 MB)">
+        <Field label="Report file (PDF/image, max 3 MB)">
           <input type="file" className="text-sm" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </Field>
         <Btn disabled={!text && !file} onClick={async () => {

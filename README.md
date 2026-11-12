@@ -5,7 +5,7 @@ Every hand-off and every payment is enforced by a NEAR smart contract, and all m
 
 Built for the **NEAR Hackathon 2026** (tracks: *Real-World Money*, *Privacy & Private AI*, *Open Innovation*).
 
-- Live contract (testnet): [`contract.docspecialcare-33f312.testnet`](https://testnet.nearblocks.io/address/contract.docspecialcare-33f312.testnet)
+- Live contract (testnet): [`care.docspecialcare-33f312.testnet`](https://testnet.nearblocks.io/address/care.docspecialcare-33f312.testnet)
 - Stack: Rust smart contract (near-sdk 5) · Next.js 14 web app · NEAR Wallet Selector · TweetNaCl (x25519 / XSalsa20-Poly1305)
 
 ---
@@ -104,6 +104,10 @@ cd ../web && npm install && npm run setup:testnet
 
 `setup:testnet` creates a faucet-funded master account and, as NEAR **sub-accounts** of it, the contract plus five demo personas. It then deploys and initialises the contract, registers and verifies the providers, publishes demo encryption keys and writes `web/.env.local`. Re-running it is safe.
 
+### Hosting
+
+The web app deploys to Vercel as-is. Set the same variables as `web/.env.local` plus a **Vercel Blob** store (`BLOB_READ_WRITE_TOKEN`); records, wrapped keys and chat messages are then stored as private, write-once blobs (still ciphertext only). Without the token the app uses local files in `web/data/`.
+
 ## Repository layout
 
 ```
@@ -144,7 +148,7 @@ All state changes emit `EVENT_JSON` logs (`standard: "docspecialcare"`).
 ## Limitations & roadmap (honest list)
 
 - **Testnet prototype, not a medical device.** Provider verification is a single admin key; production needs a licensing-body oracle or DAO.
-- Off-chain ciphertext store is a local file store for the hackathon; swap for IPFS/S3 (the API already only handles ciphertext).
+- Off-chain ciphertext store is Vercel Blob (or local files in dev); files are limited to 3 MB by the hosting body limit. IPFS/Filecoin is a drop-in next step (the API already only handles ciphertext).
 - Revoking access stops future key delivery, but can't un-share a record someone already decrypted (true of any E2E system).
 - Chat sender identity isn't signature-checked yet (content is still encrypted).
 - Demo personas use **publicly derivable** encryption keys by design; real users get random keys stored in their browser.
