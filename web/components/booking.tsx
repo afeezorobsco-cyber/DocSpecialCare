@@ -46,10 +46,10 @@ export function BookModal({
   useEffect(() => {
     if (!open) return;
     setSlot(null);
-    Promise.all(slots.map((s) => view<boolean>("is_slot_booked", { provider_id: provider.account_id, slot_start: s }).then((b) => (b ? s : null))))
-      .then((r) => setTaken(new Set(r.filter((x): x is number => x !== null))))
+    view<number[]>("booked_slots", { provider_id: provider.account_id })
+      .then((r) => setTaken(new Set(r)))
       .catch(() => setTaken(new Set()));
-  }, [open, slots, provider.account_id]);
+  }, [open, provider.account_id]);
 
   return (
     <Modal open={open} onClose={onClose} title={`Book ${provider.name}`}>

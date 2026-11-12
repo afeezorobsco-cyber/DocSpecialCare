@@ -101,7 +101,7 @@ function Dashboard() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">{p?.name || "Patient"} <span className="text-base font-normal text-slate-500">· {role || "Patient"}</span></h1>
+          <h1 className="text-xl font-semibold text-slate-900">{p?.name || "My care"} <span className="text-base font-normal text-slate-500">· {role || "Patient"}</span></h1>
           <p className="text-xs text-slate-500">
             <Acc id={account!} /> · contract <a className="font-mono text-teal-700 hover:underline" href={accountLink(CONTRACT_ID)} target="_blank" rel="noreferrer">{CONTRACT_ID}</a>
           </p>

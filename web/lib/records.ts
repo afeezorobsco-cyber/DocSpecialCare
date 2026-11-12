@@ -44,7 +44,7 @@ export async function readRecord(id: string, account: string, kp: nacl.BoxKeyPai
 export async function syncShares(account: string, kp: nacl.BoxKeyPair): Promise<number> {
   const recs = await view<ChainRecord[]>("records_for", { account_id: account });
   let shared = 0;
-  for (const r of recs.filter((x) => x.patient === account)) {
+  for (const r of recs.filter((x) => x.patient === account && x.viewers.length > 1 && !x.id.startsWith("cli-"))) {
     const res = await fetch(`/api/records/${encodeURIComponent(r.id)}?account=${encodeURIComponent(account)}`);
     if (!res.ok) continue;
     const j: { key: WrappedKey | null; holders: string[] } = await res.json();

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { Account, KeyPairSigner, providers } from "near-api-js";
 import { CONTRACT_ID, NETWORK } from "@/lib/config";
 import { rpc, GAS } from "@/lib/near";
+import { cleanError as extractError } from "@/lib/errors";
 
 export const runtime = "nodejs";
 
@@ -48,10 +49,4 @@ export async function POST(req: Request) {
   } catch (e) {
     return NextResponse.json({ error: extractError(e) }, { status: 400 });
   }
-}
-
-function extractError(e: unknown): string {
-  const s = typeof e === "string" ? e : JSON.stringify(e, Object.getOwnPropertyNames(e as object));
-  const m = s.match(/Smart contract panicked: ([^"\\]+)/);
-  return m ? m[1] : s.slice(0, 400);
 }

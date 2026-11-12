@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRecord } from "@/lib/store";
-import { view } from "@/lib/near";
+import { canAccess } from "@/lib/near";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!account) return NextResponse.json({ error: "account required" }, { status: 400 });
   let allowed = false;
   try {
-    allowed = await view<boolean>("can_access", { record_id: params.id, account_id: account });
+    allowed = await canAccess(params.id, account);
   } catch (e) {
     return NextResponse.json({ error: "Chain lookup failed: " + String(e) }, { status: 502 });
   }

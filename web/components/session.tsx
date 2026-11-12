@@ -8,6 +8,7 @@ import { providers } from "near-api-js";
 import { CONTRACT_ID, NETWORK } from "@/lib/config";
 import { GAS } from "@/lib/near";
 import { getKeypair } from "@/lib/crypto";
+import { cleanError } from "@/lib/errors";
 
 export type TxResult = { result: unknown; txHash?: string };
 export type ActivityItem = { label: string; txHash?: string; error?: string; at: number };
@@ -120,7 +121,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         log({ label, txHash: out.txHash, at: Date.now() });
         return out;
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
+        const msg = mode === "demo" ? (e instanceof Error ? e.message : String(e)) : cleanError(e);
         if (mode !== "demo") log({ label, error: msg, at: Date.now() });
         throw new Error(msg);
       }

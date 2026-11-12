@@ -147,7 +147,9 @@ export function ConsultRoom({ c, open, onClose }: { c: Consultation; open: boole
     };
   }, [open, otherPub, kp, c.id]);
 
-  useEffect(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), [msgs.length]);
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs.length]);
 
   const send = async () => {
     if (!text.trim() || !otherPub || !kp) return;

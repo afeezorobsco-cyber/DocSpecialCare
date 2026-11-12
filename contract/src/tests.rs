@@ -188,9 +188,11 @@ fn patient_cancel_before_slot_and_after_no_show() {
     assert_eq!(c.get_consultation(a).unwrap().status, ConsultStatus::Cancelled);
     // slot is free again
     assert!(!c.is_slot_booked(acc("gp.near"), SLOT));
+    assert!(c.booked_slots(acc("gp.near")).is_empty());
 
     ctx("pat.near", near(1), NOW_MS);
     let b = c.book_consultation(acc("gp.near"), SLOT, None);
+    assert_eq!(c.booked_slots(acc("gp.near")), vec![SLOT]);
     ctx("pat.near", NearToken::from_yoctonear(0), SLOT + NO_SHOW_GRACE_MS);
     c.cancel_consultation(b);
     assert_eq!(c.get_consultation(b).unwrap().status, ConsultStatus::Cancelled);

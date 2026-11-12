@@ -747,6 +747,20 @@ impl Contract {
         self.booked_slots.contains_key(&format!("{}|{}", provider_id, slot_start))
     }
 
+    /// All open (booked) slot start times for a provider, in one call.
+    pub fn booked_slots(&self, provider_id: AccountId) -> Vec<u64> {
+        self.idx_consult
+            .get(&provider_id)
+            .map(|ids| {
+                ids.iter()
+                    .filter_map(|i| self.consultations.get(i))
+                    .filter(|c| c.provider == provider_id && c.status == ConsultStatus::Booked)
+                    .map(|c| c.slot_start)
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     pub fn consultations_for(&self, account_id: AccountId) -> Vec<Consultation> {
         self.idx_consult
             .get(&account_id)

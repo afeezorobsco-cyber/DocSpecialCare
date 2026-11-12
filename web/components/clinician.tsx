@@ -112,7 +112,7 @@ export function ClinicianDashboard({ me, providers }: { me: Provider; providers:
               <span>#{c.id} · <Acc id={c.patient} /> · {when(c.slot_start)}</span>
               <span className="flex items-center gap-2">
                 {c.status === "Completed" && (
-                  <button className="text-xs text-teal-700 hover:underline" onClick={() => setAct(c)}>Follow-up</button>
+                  <button className="whitespace-nowrap text-xs text-teal-700 hover:underline" onClick={() => setAct(c)}>Follow-up</button>
                 )}
                 <Badge status={c.status} />
               </span>
