@@ -6,3 +6,4 @@ node_modules/
 *.log
 .DS_Store
 web/data/
+web/.demo-keys.json

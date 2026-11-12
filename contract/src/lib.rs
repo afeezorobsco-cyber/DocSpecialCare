@@ -81,8 +81,8 @@ pub struct Referral {
     pub patient: AccountId,
     pub from_provider: AccountId,
     pub to_specialist: AccountId,
-    /// Hash of the encrypted referral letter stored off-chain.
-    pub note_hash: String,
+    /// Off-chain record id of the encrypted referral letter (patient, referrer, specialist can read).
+    pub note_record_id: String,
     pub created_at: u64,
     /// Set when the patient books the specialist with this referral.
     pub used_by_consultation: Option<u64>,
@@ -105,8 +105,8 @@ pub struct LabOrder {
     pub ordered_by: AccountId,
     pub lab: AccountId,
     pub fee: NearToken,
-    /// Hash of the encrypted order (which tests) stored off-chain.
-    pub order_hash: String,
+    /// Off-chain record id of the encrypted order (which tests); patient, doctor and lab can read.
+    pub order_record_id: String,
     pub status: LabStatus,
     /// Off-chain record id of the encrypted result, once uploaded.
     pub result_record_id: Option<String>,
@@ -402,7 +402,13 @@ impl Contract {
     // ------------------------------------------------------------ referrals
 
     /// The consulting provider refers the patient to a verified specialist.
-    pub fn refer_to_specialist(&mut self, consultation_id: u64, specialist_id: AccountId, note_hash: String) -> u64 {
+    pub fn refer_to_specialist(
+        &mut self,
+        consultation_id: u64,
+        specialist_id: AccountId,
+        record_id: String,
+        content_hash: String,
+    ) -> u64 {
         let caller = env::predecessor_account_id();
         let c = self.consultations.get(&consultation_id).expect("Consultation not found").clone();
         require!(c.provider == caller, "Only the consulting provider can refer");
@@ -410,6 +416,15 @@ impl Contract {
         let s = self.providers.get(&specialist_id).expect("Specialist not found");
         require!(s.role == Role::Specialist && s.verified, "Target is not a verified specialist");
         require!(specialist_id != caller, "Cannot refer to yourself");
+        self.insert_record(
+            record_id.clone(),
+            c.patient.clone(),
+            RecordKind::ReferralLetter,
+            caller.clone(),
+            content_hash,
+            Some(consultation_id),
+            vec![c.patient.clone(), caller.clone(), specialist_id.clone()],
+        );
 
         let id = self.next_referral;
         self.next_referral += 1;
@@ -421,7 +436,7 @@ impl Contract {
                 patient: c.patient.clone(),
                 from_provider: caller.clone(),
                 to_specialist: specialist_id.clone(),
-                note_hash,
+                note_record_id: record_id,
                 created_at: env::block_timestamp_ms(),
                 used_by_consultation: None,
             },
@@ -435,13 +450,28 @@ impl Contract {
 
     // ------------------------------------------------------------ lab tests
 
-    pub fn order_lab_test(&mut self, consultation_id: u64, lab_id: AccountId, order_hash: String) -> u64 {
+    pub fn order_lab_test(
+        &mut self,
+        consultation_id: u64,
+        lab_id: AccountId,
+        record_id: String,
+        content_hash: String,
+    ) -> u64 {
         let caller = env::predecessor_account_id();
         let c = self.consultations.get(&consultation_id).expect("Consultation not found").clone();
         require!(c.provider == caller, "Only the consulting provider can order tests");
         require!(c.status != ConsultStatus::Cancelled, "Consultation was cancelled");
         let lab = self.providers.get(&lab_id).expect("Lab not found").clone();
         require!(lab.role == Role::Laboratory && lab.verified, "Target is not a verified laboratory");
+        self.insert_record(
+            record_id.clone(),
+            c.patient.clone(),
+            RecordKind::LabOrder,
+            caller.clone(),
+            content_hash,
+            Some(consultation_id),
+            vec![c.patient.clone(), caller.clone(), lab_id.clone()],
+        );
 
         let id = self.next_lab;
         self.next_lab += 1;
@@ -454,7 +484,7 @@ impl Contract {
                 ordered_by: caller.clone(),
                 lab: lab_id.clone(),
                 fee: lab.fee,
-                order_hash,
+                order_record_id: record_id,
                 status: LabStatus::AwaitingPayment,
                 result_record_id: None,
                 created_at: env::block_timestamp_ms(),
@@ -641,8 +671,8 @@ impl Contract {
             viewers.push(caller.clone());
         }
         require!(
-            !matches!(kind, RecordKind::LabResult | RecordKind::Prescription),
-            "Use submit_lab_result / issue_prescription"
+            matches!(kind, RecordKind::ConsultNote | RecordKind::PatientUpload),
+            "Use the dedicated method for this record kind"
         );
         self.insert_record(record_id, patient, kind, caller, content_hash, consultation_id, viewers);
     }

@@ -53,7 +53,8 @@ fn full_patient_journey() {
     // 2. physician completes and refers to the cardiologist
     ctx("gp.near", NearToken::from_yoctonear(0), SLOT);
     c.complete_consultation(gp_visit);
-    let referral = c.refer_to_specialist(gp_visit, acc("cardio.near"), H.into());
+    let referral = c.refer_to_specialist(gp_visit, acc("cardio.near"), "rec-1".into(), H.into());
+    assert!(c.can_access("rec-1".into(), acc("cardio.near")));
 
     // 3. patient books the specialist using the referral
     ctx("pat.near", near(3), NOW_MS);
@@ -62,7 +63,8 @@ fn full_patient_journey() {
 
     // 4. specialist orders a lab test, patient pays, lab submits result
     ctx("cardio.near", NearToken::from_yoctonear(0), SLOT);
-    let order = c.order_lab_test(sp_visit, acc("lab.near"), H.into());
+    let order = c.order_lab_test(sp_visit, acc("lab.near"), "rec-3".into(), H.into());
+    assert!(c.can_access("rec-3".into(), acc("lab.near")));
     ctx("pat.near", near(2), SLOT);
     c.pay_lab_order(order);
     ctx("lab.near", NearToken::from_yoctonear(0), SLOT);
@@ -113,7 +115,7 @@ fn referral_not_transferable() {
     ctx("pat.near", near(1), NOW_MS);
     let v = c.book_consultation(acc("gp.near"), SLOT, None);
     ctx("gp.near", NearToken::from_yoctonear(0), SLOT);
-    let r = c.refer_to_specialist(v, acc("cardio.near"), H.into());
+    let r = c.refer_to_specialist(v, acc("cardio.near"), "rec-2".into(), H.into());
     ctx("mallory.near", near(3), NOW_MS);
     c.book_consultation(acc("cardio.near"), SLOT, Some(r));
 }
@@ -211,7 +213,7 @@ fn wrong_lab_cannot_submit() {
     ctx("pat.near", near(1), NOW_MS);
     let v = c.book_consultation(acc("gp.near"), SLOT, None);
     ctx("gp.near", NearToken::from_yoctonear(0), SLOT);
-    let o = c.order_lab_test(v, acc("lab.near"), H.into());
+    let o = c.order_lab_test(v, acc("lab.near"), "rec-4".into(), H.into());
     ctx("pat.near", near(2), SLOT);
     c.pay_lab_order(o);
     ctx("evil-lab.near", NearToken::from_yoctonear(0), SLOT);
