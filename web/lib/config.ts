@@ -1,5 +1,5 @@
 export const NETWORK = (process.env.NEXT_PUBLIC_NETWORK || "testnet") as "testnet" | "mainnet";
-export const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID || "docspecialcare.testnet";
+export const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID || "care.docspecialcare-33f312.testnet" // hosted demo contract;
 /** RPC endpoints, tried in order (free endpoints rate-limit; we fail over). */
 export const RPC_URLS: string[] = (
   process.env.NEXT_PUBLIC_RPC_URLS ||

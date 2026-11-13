@@ -54,38 +54,38 @@ One care pathway, five parties, one contract:
 
 ## Try it
 
-### Option A: one command, full journey on testnet (no browser)
+### Option A: hosted demo (no install)
+
+Open **https://docspecialcare.vercel.app/app** and click a **demo persona** (patient, physician, cardiologist, lab, pharmacy). Personas are pre-funded testnet accounts; the server signs for them so no wallet is needed, and every click is a real testnet transaction on [`care.docspecialcare-33f312.testnet`](https://testnet.nearblocks.io/address/care.docspecialcare-33f312.testnet). You can also connect your own testnet wallet (Meteor / MyNearWallet).
+
+### Option B: reproduce everything from a fresh clone (≈ 3 min, Node 20 + Rust)
+
+Verified on a clean clone. Each step says what you should see.
 
 ```bash
-cd web
-npm install
-npm run journey      # needs web/.demo-keys.json, see "Deploy your own" below
+cd contract && cargo test          # see: "test result: ok. 12 passed"
+cd ../web && npm ci
+npm run setup:testnet              # see: "✓ Done. Contract: https://testnet.nearblocks.io/address/contract.docspecialcare-<random>.testnet"
+npm run journey                    # see: 14 "✓" lines with NearBlocks links, then
+                                   #      "✓ Second dispense rejected by the contract (no double filling)"
+npm run dev                        # open http://localhost:3000/app, see 5 demo personas
 ```
 
-It books → completes → refers → books specialist → orders test → pays lab → submits result → prescribes → assigns pharmacy → quotes → pays → dispenses, then shows a **second dispense is rejected**, printing a NearBlocks link for each transaction.
+- `setup:testnet` creates a free testnet account through the NEAR faucet, then a contract account and five persona accounts as NEAR **sub-accounts** of it; deploys the prebuilt `contract/res/docspecialcare.wasm`; registers and verifies the providers; and writes `web/.env.local` + `web/.demo-keys.json` (gitignored, testnet only).
+- `journey` books → completes → refers → books specialist → orders test → pays lab → submits result → prescribes → assigns pharmacy → quotes → pays → dispenses, then shows a **second dispense is rejected**.
+- Without `setup:testnet`, `npm run dev` still works: it reads the hosted demo contract and you can sign in with your own testnet wallet, but the demo personas are hidden (their keys aren't in the repo).
 
-### Option B: the web app
+### Suggested walkthrough in the web app (≈ 5 min)
 
-Hosted: **https://docspecialcare.vercel.app/app**. Or run it locally:
-
-```bash
-cd web
-npm install
-npm run dev          # http://localhost:3000
-```
-
-Open **/app** and either connect a NEAR testnet wallet (Meteor / MyNearWallet) or click one of the **demo personas** (patient, physician, cardiologist, lab, pharmacy). Demo personas are pre-funded testnet accounts; the local server signs for them so you don't need a wallet, and every click is still a real testnet transaction.
-
-Suggested walkthrough (≈5 min):
 1. **Patient: Amaka** → *See a doctor online* → book Dr. Tunde Bello → *Open consultation* (chat / video).
 2. **Dr. Tunde Bello** → *Clinical actions* → *Refer* to Dr. Ngozi Eze (Cardiology) → *Complete & get paid*.
 3. **Patient** → *Specialist referrals* → *Book specialist*.
 4. **Dr. Ngozi Eze** → *Clinical actions* → *Order test* at CityLab.
 5. **Patient** → *Lab tests* → *Pay*.
-6. **CityLab Diagnostics** → *Upload result* (attach any PDF/image).
-7. **Dr. Ngozi Eze** → *Lab orders* → *Result* (decrypts in browser, shows "integrity verified") → *Prescribe*.
+6. **CityLab Diagnostics** → *Upload result* (attach any PDF/image under 3 MB).
+7. **Dr. Ngozi Eze** → *Lab orders* → *Result* → see "✓ Integrity verified" (decrypted in the browser) → *Prescribe*.
 8. **Patient** → *Prescriptions* → send to HealthPlus Pharmacy.
-9. **HealthPlus Pharmacy** → *Send quote*; **Patient** → *Pay*; **Pharmacy** → *Dispense*. Try *Verify a prescription* with the Rx number.
+9. **HealthPlus Pharmacy** → *Send quote*; **Patient** → *Pay*; **Pharmacy** → *Dispense*. Then *Verify a prescription* with the Rx number → see "Dispensed".
 
 ### Contract tests
 
@@ -96,16 +96,14 @@ cargo test           # 12 unit tests: full journey + abuse cases
 
 Covered: full journey; specialist requires referral; referral not transferable; underpayment rejected; no double booking; unverified providers can't be booked; prescription dispensed only once; expired prescriptions rejected; cancellation/no-show refunds; patient can't cancel mid-consultation; only the assigned lab can submit; only the patient can grant access.
 
-## Deploy your own (testnet)
+## Rebuild the contract from source
 
-Requires Rust + [`cargo-near`](https://github.com/near/cargo-near) and Node 20.
+`setup:testnet` deploys the committed `contract/res/docspecialcare.wasm`. To build it yourself (requires [`cargo-near`](https://github.com/near/cargo-near)):
 
 ```bash
 cd contract && cargo near build non-reproducible-wasm     # → target/near/docspecialcare.wasm
-cd ../web && npm install && npm run setup:testnet
+cd ../web && npm run setup:testnet                         # uses target/near/… when it exists
 ```
-
-`setup:testnet` creates a faucet-funded master account and, as NEAR **sub-accounts** of it, the contract plus five demo personas. It then deploys and initialises the contract, registers and verifies the providers, publishes demo encryption keys and writes `web/.env.local`. Re-running it is safe.
 
 ### Hosting
 
