@@ -52,6 +52,24 @@ One care pathway, five parties, one contract:
 - On-chain the contract stores just the record id, the **sha-256 of the ciphertext** and the viewer list, so anyone can check integrity and see who was given access, but not *what* the record says.
 - Granting access is a contract call by the patient. The patient's browser then re-wraps the key for the new reader (automatically, even after a wallet redirect).
 
+### Why NEAR, and not a normal database?
+
+A hospital database works when everyone trusts the hospital. DocSpecialCare connects **independent** parties (a patient, a GP, a specialist, a lab and a pharmacy) who don't share a system and have reasons not to trust each other's records. The contract replaces that missing trust:
+
+| Problem between independent parties | What the contract enforces |
+|---|---|
+| Patient pays upfront and the provider doesn't deliver | Fee is held by the contract; released on completion, refunded on cancellation or no-show (24 h) |
+| Specialist referrals get lost or forged | Referral is a contract record: only a verified physician can issue it, only that patient can use it, once |
+| Lab results get altered or go to the wrong person | sha-256 of the ciphertext is on-chain; the access list decides who gets a decryption key |
+| Prescriptions are forged or filled at several pharmacies | Signed by a verified prescriber, expires, and `dispense_prescription` can succeed exactly once; any pharmacy can verify |
+| No shared, neutral record of who did what | Every step is a public transaction with an `EVENT_JSON` log |
+
+NEAR specifically: ~1 s finality and fees of a fraction of a cent make per-consultation payments practical; **named accounts and sub-accounts** (`gp.…`, `lab.…`) make roles readable; and **function-call access keys** keep the UX simple (below).
+
+### Wallet UX: limited access keys
+
+When a user signs in with a wallet, DocSpecialCare asks the wallet to add a **function-call access key** that can only call the contract's non-payable methods (`refer_to_specialist`, `order_lab_test`, `submit_lab_result`, `issue_prescription`, `dispense_prescription`, `grant_access`, …; see `LIMITED_KEY_METHODS` in `web/components/session.tsx`). Day-to-day clinical actions are then signed in the browser without a wallet pop-up, and the key **cannot move funds**. Anything with a deposit (`book_consultation`, `pay_lab_order`, `pay_prescription`) always goes to the wallet for explicit approval.
+
 ## Try it
 
 ### Option A: hosted demo (no install)
@@ -148,13 +166,15 @@ All state changes emit `EVENT_JSON` logs (`standard: "docspecialcare"`).
 
 ## Limitations & roadmap (honest list)
 
-- **Testnet prototype, not a medical device.** Provider verification is a single admin key; production needs a licensing-body oracle or DAO.
-- Off-chain ciphertext store is Vercel Blob (or local files in dev); files are limited to 3 MB by the hosting body limit. IPFS/Filecoin is a drop-in next step (the API already only handles ciphertext).
-- Revoking access stops future key delivery, but can't un-share a record someone already decrypted (true of any E2E system).
-- Chat sender identity isn't signature-checked yet (content is still encrypted).
-- Demo personas use **publicly derivable** encryption keys by design; real users get random keys stored in their browser.
+- **Testnet prototype, not a medical device.** Not yet assessed against health-data law (e.g. Nigeria's NDPA, HIPAA).
+- **Payments are in NEAR**, whose price moves. A clinic would want a stable unit: next step is USDC (NEP-141, `ft_transfer_call` into the same escrow).
+- **Metadata is public.** Medical *content* is never on-chain, but the access lists and referrals show *which* accounts interacted (e.g. that a patient account was referred to a cardiologist account). Mitigation planned: a fresh pseudonymous sub-account per care episode, so on-chain records can't be linked to a person's main account.
+- **Some trust is still centralised:** provider verification is a single admin key (next: a licensing-body oracle or a Sputnik DAO of verifiers); ciphertext is stored on Vercel Blob (next: IPFS/Filecoin, since the API only handles ciphertext); demo personas are signed by the demo server (testnet only; real users sign with their own wallet).
+- Revoking access stops future key delivery, but can't un-share a record someone already decrypted (true of any end-to-end encrypted system).
+- Chat sender identity isn't signature-checked yet (content is still encrypted). Files are limited to 3 MB by the hosting body limit.
+- Demo personas use **publicly derivable** encryption keys by design; real users get random keys kept in their browser.
 - Contract storage is paid by the contract account; next step is per-user storage deposits.
-- Next: stablecoin (USDC) payments via NEP-141, meta-transactions so patients don't need NEAR for gas, NEAR AI Cloud (TEE) for private symptom triage before booking, insurer/HMO payouts.
+- Also next: meta-transactions so patients don't need NEAR for gas, NEAR AI Cloud (TEE) for private symptom triage before booking, insurer/HMO payouts.
 
 ## Hackathon notes
 

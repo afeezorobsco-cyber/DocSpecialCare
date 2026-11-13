@@ -53,6 +53,10 @@ function Login() {
         <div className="flex flex-col items-center gap-3 py-2">
           <Btn onClick={connectWallet}>Connect NEAR wallet</Btn>
           <p className="text-xs text-slate-500">Meteor Wallet or MyNearWallet ({NETWORK}). New here? Create a free testnet account in the wallet.</p>
+          <p className="max-w-md text-center text-xs text-slate-500">
+            Signing in adds a <b>limited NEAR access key</b> that can only perform everyday clinical actions on DocSpecialCare and can&apos;t move funds,
+            so those are one click. Every payment still asks for your wallet&apos;s approval.
+          </p>
         </div>
       </Card>
       {DEMO_PERSONAS.length > 0 && (

@@ -26,6 +26,13 @@ type Session = {
 };
 
 const Ctx = createContext<Session | null>(null);
+
+/** Contract methods the limited (function-call) key may call: none of them accept or move money. */
+export const LIMITED_KEY_METHODS = [
+  "set_encryption_key", "register_provider", "complete_consultation", "cancel_consultation",
+  "refer_to_specialist", "order_lab_test", "submit_lab_result", "issue_prescription",
+  "assign_pharmacy", "quote_prescription", "dispense_prescription", "add_record", "grant_access", "revoke_access",
+];
 const LS_DEMO = "dsc:demo-account";
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -47,12 +54,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         import("@near-wallet-selector/my-near-wallet"),
         import("@near-wallet-selector/meteor-wallet"),
       ]);
+      // Function-call access key: on sign-in the wallet adds a limited key to the user's account that can
+      // ONLY call these non-payable methods on our contract (and can't move funds). Everyday clinical actions
+      // are then signed locally, with no wallet pop-up; anything with a deposit (booking, paying the lab or
+      // pharmacy) still requires explicit approval in the wallet.
       const sel = await setupWalletSelector({
         network: NETWORK,
         modules: [setupMeteorWallet(), setupMyNearWallet()],
+        createAccessKeyFor: { contractId: CONTRACT_ID, methodNames: LIMITED_KEY_METHODS },
       });
       selector.current = sel;
-      modal.current = setupModal(sel, { contractId: CONTRACT_ID });
+      modal.current = setupModal(sel, { contractId: CONTRACT_ID, methodNames: LIMITED_KEY_METHODS });
       const sync = (accs: { accountId: string; active: boolean }[]) => {
         const active = accs.find((a) => a.active)?.accountId;
         if (active) {
