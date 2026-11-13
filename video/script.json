@@ -1,0 +1,85 @@
+{
+  "title": "DocSpecialCare: care without the queue",
+  "scenes": [
+    {
+      "id": "hook",
+      "visual": "motion:queue",
+      "text": "Seven a.m. You're unwell, so you go to the hospital. By the time a doctor sees you, it's almost noon."
+    },
+    {
+      "id": "problem",
+      "visual": "motion:problem",
+      "text": "Then you queue again: for the specialist, the lab, and the pharmacy. Referrals get lost, results travel on paper, and you pay before anyone helps you."
+    },
+    {
+      "id": "intro",
+      "visual": "motion:logo",
+      "text": "DocSpecialCare puts that whole journey online. No queues, no lost paperwork."
+    },
+    {
+      "id": "referee",
+      "visual": "motion:referee",
+      "text": "It runs on NEAR, a blockchain. Think of it as a fair digital referee. It holds your payment safely, keeps a permanent record of every step, and lets only the people you choose see your health information."
+    },
+    {
+      "id": "book",
+      "visual": "app:book",
+      "text": "Meet Amaka. She has chest pains, so she picks a doctor and a time that suits her."
+    },
+    {
+      "id": "escrow",
+      "visual": "motion:escrow",
+      "text": "Her payment doesn't go straight to the doctor. NEAR holds it, and releases it only after the consultation. If the doctor doesn't show up, she gets it back."
+    },
+    {
+      "id": "consult",
+      "visual": "app:consult",
+      "text": "At her appointment, she chats with the doctor and joins a private video call. Only the two of them can read it."
+    },
+    {
+      "id": "refer",
+      "visual": "app:refer",
+      "text": "Doctor Tunde refers her to a heart specialist. The referral is recorded on NEAR, so it can't get lost. He completes the visit, and he's paid automatically."
+    },
+    {
+      "id": "specialist",
+      "visual": "app:specialist",
+      "text": "Amaka books the specialist with her referral, who orders blood tests. She pays the lab the same safe way."
+    },
+    {
+      "id": "lab",
+      "visual": "motion:lock",
+      "text": "The lab locks her results before sending them. NEAR keeps only a fingerprint of the results, and a list of who may open them. The lab is paid on delivery."
+    },
+    {
+      "id": "verify",
+      "visual": "app:verify",
+      "text": "The specialist opens them. This green check proves nothing was changed on the way."
+    },
+    {
+      "id": "prescribe",
+      "visual": "app:prescribe",
+      "text": "She prescribes medicine. Amaka chooses a pharmacy, and only that pharmacy can read the prescription."
+    },
+    {
+      "id": "pharmacy",
+      "visual": "app:pharmacy",
+      "text": "Amaka pays, and the medicine is handed over. Each prescription works only once, and any pharmacy can check it's genuine."
+    },
+    {
+      "id": "proof",
+      "visual": "app:proof",
+      "text": "Every step you saw is a real transaction on NEAR. Each one confirms in about a second, for a tiny fraction of a cent."
+    },
+    {
+      "id": "recap",
+      "visual": "motion:recap",
+      "text": "Patients wait less and own their records. Doctors, labs and pharmacies get paid fairly. And everyone can trust the process."
+    },
+    {
+      "id": "outro",
+      "visual": "motion:outro",
+      "text": "DocSpecialCare. Care without the queue. Built on NEAR."
+    }
+  ]
+}
